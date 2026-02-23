@@ -1,0 +1,295 @@
+﻿@using System.Data.SqlClient;
+@using Microsoft.AspNetCore.Mvc;
+@using System.Globalization;
+
+@using Microsoft.AspNetCore.Http;
+@inject IHttpContextAccessor HttpContextAccessor;
+@{
+    var cfg= WebApplication.CreateBuilder().Configuration;
+    string? connStr= cfg.GetValue<string>("ConnectionString");
+
+
+    var cookieoptions= new CookieOptions{Path="/"};
+
+    string? command= HttpContextAccessor?.HttpContext?.Request.Cookies["cmd"];
+
+
+}
+
+
+<body>
+
+<script>
+
+document.cookie= 'cmd=;path=/';
+
+var moveelement=false;
+
+function tellPos(p){
+
+document.getElementById('mouseX').value=p.pageX;
+document.getElementById('mouseY').value=p.pageY;
+
+if(moveelement){
+
+  document.getElementById('note_'+document.getElementById("mouseX").getAttribute("selected")).style.left=p.pageX+"px";
+document.getElementById('note_'+document.getElementById("mouseX").getAttribute("selected")).style.top=p.pageY+"px";
+}
+}
+addEventListener('mousemove', tellPos, false);
+
+addEventListener('contextmenu', function(event){event.preventDefault(); moveelement=false});
+</script>
+
+
+
+<input type="number" id="mouseX" style="position:absolute;visibility:hidden" selected="">
+<input type="number" id="mouseY" style="position:absolute;visibility:hidden">
+
+
+
+<style>
+h3{margin-top:0px; margin-bottom:0px;}
+button.uiButton{width:32px; height:24px}
+</style>
+
+<fieldset style="border:none; background:transparent"><legend><button onclick="window.postMessage('goto mainmenu')"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b1/Back_Arrow.svg/800px-Back_Arrow.svg.png?20131211215511" style="width:20px"></button>&nbsp;
+<text style="background:white; border:2px solid white; border-radius:500px"><b>Inventory</b></text></legend>
+
+<fieldset id="dialog_rotAngle" selected="" class="center" style="position:fixed; z-index:1; visibility:hidden"><legend style="background:white; border-radius:500px">Specify rotation angle:</legend>
+<br><center><input type="number" style="width:40px" onchange="var selectedNote=(Number)(document.getElementById('dialog_rotAngle').getAttribute('selected')); document.getElementsByClassName('note')[selectedNote].style.transform='rotateZ('+this.value+'deg)'"><text style="display:block">degree(s)</text></center>
+<br><center><button onclick="this.parentElement.parentElement.style.visibility='hidden'">Close</button></center>
+</fieldset>
+
+<div id="inventorytable" style="height:100%; overflow:auto">
+
+
+<iframe id="notewriter" src="/Home/Sales" style="position:absolute; visibility:hidden"></iframe>
+
+
+
+
+
+
+@{ SqlConnection conn= new SqlConnection(connStr);
+
+string sql= "select cork_notetitle,cork_notecontents,cork_notefiles,cork_noteid,cork_noteposX,cork_noteposY,cork_notesize,cork_notecolor,cork_noterotation,cork_notelocation,cork_notelastedit,cork_notecreated,cork_noteisexternal,cork_noteisimportant from dbo.[users/"+(string?)HttpContextAccessor?.HttpContext?.Request.Cookies["uname_login"]+"] order by cork_notecolor offset 1 rows;";
+
+conn.Open();
+SqlCommand cmd= new SqlCommand(sql,conn);
+SqlDataReader rdr= cmd.ExecuteReader();
+
+
+while(rdr.Read()){
+
+
+
+<div style="position:absolute; left:@rdr[4]px; top:@rdr[5]px; transform: rotateZ(@rdr[8]deg)" class="note" id="note_@rdr[3]">
+<fieldset style="background: #@rdr[7]; border:none; border-radius:0px; filter: drop-shadow(5px 5px 4px #0000007F)" onmouseenter="document.getElementById('noteUI_'+'@rdr[3]').style.visibility='visible';" onmouseleave="document.getElementById('noteUI_'+'@rdr[3]').style.visibility='hidden';">
+
+<legend class="noteUI" id="noteUI_@rdr[3]" style="visibility:hidden">
+
+<table style="position:absolute; left:-16px; top:-16px"><tbody><tr>
+
+<td>
+    <button title="Move" class="uiButton" onclick="document.getElementById('mouseX').setAttribute('selected','@rdr[3]'); moveelement=!moveelement">✥</button>
+</td>
+
+<td>
+    <button title="Rotate" class="uiButton" onclick="document.getElementById('dialog_rotAngle').setAttribute('selected', @rdr[3]); document.getElementById('dialog_rotAngle').style.visibility='visible'">↻</button>
+</td>
+
+<td>
+    <input id="note_@rdr[3]_colorpicker" value="#@rdr[7]" title="Note color" type="color" class="uiButton" onchange="document.getElementById('note_'+'@rdr[3]').children[0].style.background=this.value">
+</td>
+
+<!--<td>
+    <button title="Mark/unmark as important" class="uiButton">❕</button>
+</td>-->
+
+<td>
+    <button id="save_button_@rdr[3]" title="Save" class="uiButton" onclick="document.cookie= 'cmd=savenote;path=/'; document.cookie= 'arg0=@rdr[3];path=/'; document.getElementById('notewriter').src=document.getElementById('notewriter').src">💾</button>
+</td>
+
+<td style="width:100%">
+    <button title="Delete" class="uiButton" style="margin-left:100%" onclick="document.cookie= 'cmd=deletenote;path=/'; document.cookie= 'arg0=@rdr[3];path=/'; document.getElementById('notewriter').src=document.getElementById('notewriter').src">❌</button>
+</td>
+
+</tr></tbody></table>
+
+
+</legend>
+
+
+<text style="position:absolute; font-size:2em; left:50%; top:-30px; z-index:-1">📌</text>
+
+<br>
+
+<input id="note_@rdr[3]_title" type="text" value="@rdr[0]" style="width:100%; background:transparent; border:none; font-size:1.5em">
+<br>
+
+<textarea id="note_@rdr[3]_contents" style="font-family:arial; @rdr[6]; background:transparent; border:none">@rdr[1]</textarea>
+
+<div style="position:absolute; bottom:0px; left:0px; background: linear-gradient(35deg, #0000001F, #0000 15%); width:100%; height:100%; z-index:-1"></div>
+
+
+</fieldset>
+</div>
+
+
+}
+
+}
+
+
+
+
+
+
+
+</div>
+
+</fieldset>
+
+<br>
+<br>
+<br>
+<br>
+
+<marquee direction="up" behavior="slide" scrollamount="35" style="position:fixed; bottom:0px; width:125px; right:0px; z-index:-1">
+
+<fieldset>
+<center>
+<fieldset title="New" style="display:inline-block; border-radius:15px; cursor:pointer; background:#FFF" onclick="document.getElementById('newitem_titlebar').innerText= 'Add new note'; document.getElementById('newitem_prompt').style.visibility='visible'">
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;➕&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</fieldset>
+
+</center>
+
+</fieldset>
+
+</marquee>
+
+
+
+
+<div id="newitem_prompt" class="center" style="position:fixed; visibility:hidden">
+<div style="backdrop-filter:blur(4px);">
+
+<fieldset style="border-radius:30px 10% 30% 30px; background:#FFFFFF7F"><legend><button onclick="for(c=0;c<document.getElementsByClassName('selectable').length;c++){document.getElementsByClassName('selectable')[c].style.background= 'transparent'}; document.getElementById('newitem_prompt').style.visibility='hidden'">Cancel</button>&nbsp;&nbsp;<b style="background:white; border:2px solid white; border-radius:500px" id="newitem_titlebar">Add new note</b>
+<button id="ok_button" style="position:absolute; right:5%" onclick="document.cookie= 'cmd=addnote;path=/'; document.cookie= 'arg0='+document.getElementById('newnote_title').value+';path=/'; document.cookie= 'arg1='+document.getElementById('newnote_contents').value+';path=/'; document.cookie= 'arg2='+document.getElementById('mouseX').value+';path=/'; document.cookie= 'arg3='+document.getElementById('mouseY').value+';path=/'; document.getElementById('notewriter').src=document.getElementById('notewriter').src; document.getElementById('newitem_prompt').style.visibility='hidden'">OK</button></legend>
+
+<fieldset style="border-radius:30px 30% 30px 30%"><legend style="background:black; border-radius:10px; color:white">Title:</legend>
+<center>
+<input id="newnote_title" class="additemField" type="text" style="border-radius:10px; width:95%"></center>
+</fieldset>
+
+<fieldset><legend style="background:black; border-radius:10px; color:white">Contents:</legend>
+<center>
+<!--<input id="additem_details" type="text" style="border-radius:10px; width:95%">-->
+
+<textarea id="newnote_contents" style="font-family:arial; width:400px; height:200px"></textarea>
+</center>
+</fieldset>
+
+</fieldset>
+
+</div>
+
+</div>
+
+
+
+
+<div id="sellitem_prompt" style="position:fixed; left:0px; top:0px; width:100vw; height:100vh; visibility:hidden">
+<div style="left:25vw; position:fixed; top:40vh; backdrop-filter:blur(4px);">
+
+<fieldset style="border-radius:30px 10% 30% 30px; background:#FFFFFF7F"><legend><button onclick="for(c=0;c<document.getElementsByClassName('selectable').length;c++){document.getElementsByClassName('selectable')[c].style.background= 'transparent'}; document.getElementById('sellitem_prompt').style.visibility='hidden'">Cancel</button>&nbsp;&nbsp;<b style="background:white; border:2px solid white; border-radius:500px" id="sellitem_titlebar">Sell an item</b>&nbsp;&nbsp;<button id="ok_button_sell">OK</button></legend>
+
+<fieldset style="border-radius:30px 30% 30px 30%"><legend style="background:white; border-radius:10px; color:black">How many units?</legend>
+<center><input id="sellitem_qty" type="number" value=1 min=1 style="border-radius:10px; width:64px"> out of X</center>
+</fieldset>
+
+
+
+</fieldset>
+</div>
+</div>
+
+<script>
+document.getElementById("ok_button_sell").addEventListener("click", function(){
+if(document.getElementById("sellitem_qty").value.length>0){
+document.cookie= "cmd_arg2="+document.getElementById("sellitem_qty").value+";path=/"; document.cookie="cmd=sell;path=/";
+window.location=window.location;
+}
+})
+</script>
+
+
+<script>
+
+document.getElementById("ok_button").addEventListener("click", function(){
+
+if(document.getElementById("additem_pricel").value.length==1){document.getElementById("additem_pricel").value= document.getElementById("additem_pricel").value+"0";}
+if(document.getElementById("additem_pricel").value.length==0){document.getElementById("additem_pricel").value= "00";}
+
+if(document.getElementById("additem_priceh").value.length==0){document.getElementById("additem_priceh").value= "0";}
+
+
+var error=0; var categoryString;
+
+//console.log(document.getElementsByClassName("additemField"));
+
+for(c=0;c<document.getElementsByClassName("additemField").length;c++){
+if(document.getElementsByClassName("additemField")[c].value.length==0){error++;}
+}
+
+if(document.getElementById("objtype_select1").checked ==false && document.getElementById("objtype_select2").checked ==false && document.getElementById("objtype_select3").checked ==false && document.getElementById("objtype_select4").checked ==false){error++;}
+
+
+if(error==0){
+for(c=1;c<4;c++){
+
+if(document.getElementById("objtype_select"+String(c)).checked ==true){categoryString= document.getElementById("objtype_select"+String(c)).nextSibling.innerText;}
+
+}
+
+if(document.getElementById("objtype_select4").checked ==true){categoryString= document.getElementById("objtype_select4").nextSibling.children[0].value;}
+
+if(document.getElementById("objtype_select4").checked ==true && document.getElementById("objtype_select4").nextSibling.children[0].value.length==0){error++;}
+
+}
+
+//console.log(error);
+//console.log(categoryString);
+
+
+
+
+if(error==0){
+
+if(document.getElementById("newitem_titlebar").innerText.charAt(0)=="A"){
+document.cookie= "cmd=additem;path=/";} else
+{document.cookie= "cmd=updateitem;path=/";}
+
+document.cookie= "newitem_name="+encodeURIComponent(document.getElementById("additem_name").value)+";path=/";
+document.cookie= "newitem_details="+encodeURIComponent(document.getElementById("additem_details").value)+";path=/";
+document.cookie= "newitem_price="+Number(String(document.getElementById("additem_priceh").value)+"."+String(document.getElementById("additem_pricel").value)).toFixed(2)+";path=/";
+document.cookie= "newitem_qty="+document.getElementById("additem_qty").value+";path=/";
+document.cookie= "newitem_category="+encodeURIComponent(categoryString)+";path=/";
+document.cookie= "newitem_lastship="+document.getElementById("additem_lastship").value+";path=/";
+document.cookie= "newitem_nextship="+document.getElementById("additem_nextship").value+";path=/";
+
+
+
+for(c=0;c<document.getElementById("newitem_prompt").getElementsByTagName("input").length;c++){document.getElementById("newitem_prompt").getElementsByTagName("input")[c].value="";}
+
+window.location=window.location;
+}
+
+})
+
+</script>
+
+
+
+</body>

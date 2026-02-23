@@ -1,0 +1,237 @@
+﻿@using System.Data.SqlClient;
+
+@using Microsoft.AspNetCore.Http;
+@inject IHttpContextAccessor HttpContextAccessor;
+@{
+var cfg= WebApplication.CreateBuilder().Configuration;
+string? connStr= cfg.GetValue<string>("ConnectionString");
+
+var cookieoptions= new CookieOptions{Path="/"};
+}
+
+<body>
+
+@{
+if((string?)HttpContextAccessor?.HttpContext?.Request.Cookies["cmd"]=="savenote"){
+
+string? noteID= (string?)HttpContextAccessor?.HttpContext?.Request.Cookies["arg0"];
+
+
+<script>
+
+document.cookie= "arg0="+encodeURIComponent(window.parent.document.getElementById("note_"+"@noteID"+"_title").value)+";path=/";
+document.cookie= "arg1="+encodeURIComponent(window.parent.document.getElementById("note_"+"@noteID"+"_contents").value)+";path=/";
+//document.cookie= "arg2="+encodeURIComponent(window.parent.document.getElementById("note_"+"@noteID"+"_edited").innerText)+";path=/";
+document.cookie= "arg3="+encodeURIComponent(window.parent.document.getElementById("note_"+"@noteID"+"_colorpicker").value.slice(1))+";path=/";
+document.cookie= "arg4=@noteID;path=/";
+
+document.cookie= "arg5="+encodeURIComponent(window.parent.document.getElementById("note_"+"@noteID"+"_contents").style.width)+";path=/";
+document.cookie= "arg6="+encodeURIComponent(window.parent.document.getElementById("note_"+"@noteID"+"_contents").style.height)+";path=/";
+
+document.cookie= "arg7="+encodeURIComponent(window.parent.document.getElementById("note_"+"@noteID").style.left.slice(0,-2))+";path=/";
+document.cookie= "arg8="+encodeURIComponent(window.parent.document.getElementById("note_"+"@noteID").style.top.slice(0,-2))+";path=/";
+
+document.cookie= "arg9="+encodeURIComponent(window.parent.document.getElementById("note_"+"@noteID").style.transform.slice(8,-4))+";path=/";
+
+document.cookie= "cmd=savenotefinish;path=/";
+
+window.location.href=window.location.href
+</script>
+
+}
+
+
+if((string?)HttpContextAccessor?.HttpContext?.Request.Cookies["cmd"]=="savenotefinish"){
+
+string? title= (string?)HttpContextAccessor?.HttpContext?.Request.Cookies["arg0"];
+string? contents= (string?)HttpContextAccessor?.HttpContext?.Request.Cookies["arg1"];
+//string? edited= (string?)HttpContextAccessor?.HttpContext?.Request.Cookies["arg2"];
+string? color= (string?)HttpContextAccessor?.HttpContext?.Request.Cookies["arg3"];
+string? id= (string?)HttpContextAccessor?.HttpContext?.Request.Cookies["arg4"];
+
+string? width= (string?)HttpContextAccessor?.HttpContext?.Request.Cookies["arg5"];
+string? height= (string?)HttpContextAccessor?.HttpContext?.Request.Cookies["arg6"];
+
+string? left= (string?)HttpContextAccessor?.HttpContext?.Request.Cookies["arg7"];
+string? top= (string?)HttpContextAccessor?.HttpContext?.Request.Cookies["arg8"];
+
+string? rotation= (string?)HttpContextAccessor?.HttpContext?.Request.Cookies["arg9"];
+
+SqlConnection conn= new SqlConnection(connStr);
+
+string sql= "update dbo.[users/"+(string?)HttpContextAccessor?.HttpContext?.Request.Cookies["uname_login"]+"] set "+
+"cork_notetitle=N'"+(string?)HttpContextAccessor?.HttpContext?.Request.Cookies["arg0"]+"',"+
+"cork_notecontents=N'"+(string?)HttpContextAccessor?.HttpContext?.Request.Cookies["arg1"]+"',"+
+"cork_notecolor='"+(string?)HttpContextAccessor?.HttpContext?.Request.Cookies["arg3"]+"',"+
+"cork_notesize='width:"+(string?)HttpContextAccessor?.HttpContext?.Request.Cookies["arg5"]+";height:"+(string?)HttpContextAccessor?.HttpContext?.Request.Cookies["arg6"]+"',"+
+"cork_noteposX="+(string?)HttpContextAccessor?.HttpContext?.Request.Cookies["arg7"]+","+
+"cork_noteposY="+(string?)HttpContextAccessor?.HttpContext?.Request.Cookies["arg8"]+","+
+"cork_noterotation='"+(string?)HttpContextAccessor?.HttpContext?.Request.Cookies["arg9"]+"' "+
+
+"where cork_noteid='"+(string?)HttpContextAccessor?.HttpContext?.Request.Cookies["arg4"]+"';";
+
+conn.Open();
+SqlCommand cmd= new SqlCommand(sql,conn);
+SqlDataReader rdr= cmd.ExecuteReader();
+
+while(rdr.Read()){}
+
+HttpContextAccessor?.HttpContext?.Response.Cookies.Append("cmd","",cookieoptions);
+}
+
+
+
+
+
+
+
+
+if((string?)HttpContextAccessor?.HttpContext?.Request.Cookies["cmd"]=="addnote"){
+
+int newnoteID=0;
+
+SqlConnection conn= new SqlConnection(connStr);
+
+string sql= "select cork_noteid from dbo.[users/"+(string?)HttpContextAccessor?.HttpContext?.Request.Cookies["uname_login"]+"] where cork_noteid=(select max(cork_noteid) from dbo.[users/"+(string?)HttpContextAccessor?.HttpContext?.Request.Cookies["uname_login"]+"]);";
+
+conn.Open();
+SqlCommand cmd= new SqlCommand(sql,conn);
+SqlDataReader rdr= cmd.ExecuteReader();
+
+while(rdr.Read()){
+try{newnoteID= int.Parse(((string)rdr[0]))+1;}catch{}
+}
+
+
+
+conn= new SqlConnection(connStr);
+
+    sql= "INSERT INTO dbo.[users/"+(string?)HttpContextAccessor?.HttpContext?.Request.Cookies["uname_login"]+"]"+ " (uname,dname,pword,email,phnum,location,contact,details,signupdate,set_bgurl,set_bgfile,set_bgtype,cork_notetitle,cork_notecontents,cork_notefiles,cork_noteid,cork_noteposX,cork_noteposY,cork_notesize,cork_notecolor,cork_noterotation,cork_notelocation,cork_notelastedit,cork_notecreated,cork_noteisexternal,cork_noteisimportant,timeline_joincode,timeline_scroll,timeline_maxitemsperpage) values(NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,N'"+(string?)HttpContextAccessor?.HttpContext?.Request.Cookies["arg0"]+"',N'"+(string?)HttpContextAccessor?.HttpContext?.Request.Cookies["arg1"]+"',NULL,"+newnoteID+","+(string?)HttpContextAccessor?.HttpContext?.Request.Cookies["arg2"]+","+(string?)HttpContextAccessor?.HttpContext?.Request.Cookies["arg3"]+",'width:300px;height:200px','FFFFFF',0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL);";
+
+conn.Open();
+cmd= new SqlCommand(sql,conn);
+rdr= cmd.ExecuteReader();
+
+while(rdr.Read()){} rdr.Close(); conn.Close();
+
+
+
+
+
+
+
+
+<script>
+
+var element=document.createElement("div");
+element.innerHTML= `
+<div style="position:absolute; left:`+window.parent.document.getElementById("mouseX").value+`px; top:`+window.parent.document.getElementById("mouseY").value+`px; transform: rotateZ(0deg)" class="note" id="note_@newnoteID">
+<fieldset style="background: #FFFFFF; border:none; border-radius:0px; filter: drop-shadow(5px 5px 4px #0000007F)" onmouseenter="document.getElementById('noteUI_'+'@newnoteID').style.visibility='visible';" onmouseleave="document.getElementById('noteUI_'+'@newnoteID').style.visibility='hidden';">
+
+<legend class="noteUI" id="noteUI_@newnoteID" style="visibility:hidden">
+
+<table style="position:absolute; left:-16px; top:-16px"><tbody><tr>
+
+<td>
+    <button title="Move" class="uiButton" onclick="document.getElementById('mouseX').setAttribute('selected','@newnoteID'); moveelement=!moveelement">✥</button>
+</td>
+
+<td>
+    <button title="Rotate" class="uiButton" onclick="document.getElementById('dialog_rotAngle').setAttribute('selected', @newnoteID); document.getElementById('dialog_rotAngle').style.visibility='visible'">↻</button>
+</td>
+
+<td>
+    <input id="note_@(newnoteID)_colorpicker" value="#FFFFFF" title="Note color" type="color" class="uiButton" onchange="document.getElementById('note_'+'@newnoteID').children[0].style.background=this.value">
+</td>
+
+<!--<td>
+    <button title="Mark/unmark as important" class="uiButton">❕</button>
+</td>-->
+
+<td>
+    <button id="save_button_@newnoteID title="Save" class="uiButton" onclick="document.cookie= 'cmd=savenote;path=/'; document.cookie= 'arg0=@newnoteID;path=/'; document.getElementById('notewriter').src=document.getElementById('notewriter').src">💾</button>
+</td>
+
+<td style="width:100%">
+    <button title="Delete" class="uiButton" style="margin-left:100%" onclick="document.cookie= 'cmd=deletenote;path=/'; document.cookie= 'arg0=@newnoteID;path=/'; document.getElementById('notewriter').src=document.getElementById('notewriter').src">❌</button>
+</td>
+
+</tr></tbody></table>
+
+
+</legend>
+
+
+<text style="position:absolute; font-size:2em; left:50%; top:-30px; z-index:-1">📌</text>
+
+<br>
+
+<input id="note_@(newnoteID)_title" type="text" value="`+window.parent.document.getElementById("newnote_title").value+`" style="width:100%; background:transparent; border:none; font-size:1.5em">
+<br>
+
+<textarea id="note_@(newnoteID)_contents" style="font-family:arial; width:300px;height:200px; background:transparent; border:none">`+window.parent.document.getElementById("newnote_contents").value+`</textarea>
+
+<div style="position:absolute; bottom:0px; left:0px; background: linear-gradient(35deg, #0000001F, #0000 15%); width:100%; height:100%; z-index:-1"></div>
+
+
+</fieldset>
+</div>
+`;
+
+
+window.parent.document.getElementById("inventorytable").appendChild(element.getElementsByClassName("note")[0]);
+
+window.parent.document.getElementById("save_button_@newnoteID").click();
+
+
+</script>
+
+}
+
+
+
+
+if((string?)HttpContextAccessor?.HttpContext?.Request.Cookies["cmd"]=="deletenote"){
+
+SqlConnection conn= new SqlConnection(connStr);
+
+string sql= "delete from dbo.[users/"+(string?)HttpContextAccessor?.HttpContext?.Request.Cookies["uname_login"]+"] where cork_noteid="+(string?)HttpContextAccessor?.HttpContext?.Request.Cookies["arg0"]+";";
+
+conn.Open();
+SqlCommand cmd= new SqlCommand(sql,conn);
+SqlDataReader rdr= cmd.ExecuteReader();
+
+
+while(rdr.Read()){}
+
+//BUG!: add renumbering of note IDs to fix misrecognition
+
+
+<script>window.parent.document.getElementById("note_"+"@((string?)HttpContextAccessor?.HttpContext?.Request.Cookies["arg0"])").remove();
+
+
+document.cookie= "cmd=;path=/";
+
+
+</script>
+
+
+}
+
+
+
+
+
+
+if((string?)HttpContextAccessor?.HttpContext?.Request.Cookies["cmd"]=="addnotefromfeed"){
+
+
+}
+
+
+}
+
+
+
+
+</body>

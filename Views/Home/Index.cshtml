@@ -1,0 +1,454 @@
+﻿@{
+@using System.Data.SqlClient;
+@using Microsoft.AspNetCore.Mvc;
+
+@using Microsoft.AspNetCore.Http;
+@inject IHttpContextAccessor HttpContextAccessor;
+
+var cookieoptions= new CookieOptions{Path="/"};
+HttpContextAccessor?.HttpContext?.Response.Cookies.Append("cmd","",cookieoptions);
+
+try{
+string uname_login= HttpContextAccessor?.HttpContext?.Request.Cookies["uname_login"];
+
+<style>.placeholder{visibility:hidden}</style>
+
+<div class="placeholder" style="position:absolute">@uname_login</div> // IGNORE WARNING. DO NOT REMOVE OR WILL BREAK. Validate login.
+
+var cfg= WebApplication.CreateBuilder().Configuration;
+string? connStr= cfg.GetValue<string>("ConnectionString");
+
+
+string? dname="";
+
+
+string? bgurl="";
+
+SqlConnection conn= new SqlConnection(connStr);
+string sql= "select dname,set_bgurl from dbo.[users/"+uname_login+"] where uname='"+uname_login+"'";
+
+conn.Open();
+SqlCommand cmd= new SqlCommand(sql,conn);
+SqlDataReader rdr= cmd.ExecuteReader();
+
+while(rdr.Read()){
+dname=(string?)rdr[0];
+bgurl=(string?)rdr[1];
+} rdr.Close();
+conn.Close();
+
+
+<h1 class="placeholder" style="position:absolute">@HttpContextAccessor?.HttpContext?.Request.Cookies["uname"]16; @dname</h1>//ALSO DO NOT REMOVE OR ELSE LOGIN CHECK BREAKS.
+
+<head>
+    <title>@uname_login's BizzCork</title>
+</head>
+
+
+
+
+
+<body style="background-image: url('@bgurl'); overflow:hidden; height:100vh; width:100vw" class="nofullscreen">
+
+<style>.displayname {background:white; border:2px solid white; border-radius:500px;}</style>
+
+
+
+
+<table style="position:absolute; height:100%; width:100%; left:0px; top:0px"><tbody>
+<tr style="height:0%"><td>
+
+
+<marquee direction="up" behavior="slide" scrollamount="20">
+<fieldset style="background:linear-gradient(180deg, #FFF, #BBB)">
+BizzCork ● Logged in as: <text class="displayname" id="display_name" title="@uname_login">@dname</text>&nbsp;<button id="logout_button" title="Log out">🚪←</button>
+<text style="position:absolute;right:10%"><img src="https://cdn-icons-png.freepik.com/512/1/1481.png" style="height:32px; cursor:pointer" title="Toggle fullscreen" onclick="if(document.fullscreenElement==null){document.documentElement.requestFullscreen()}else{document.exitFullscreen()}"></text>
+<a href="https://github.com/IvanStoilov86/bizzcork_webapp" target="_blank" style="position:absolute;right:4%"><img src="https://cdn4.iconfinder.com/data/icons/iconsimple-logotypes/512/github-128.png" style="height:32px" title="Go to GitHub"></a>
+
+<img id="cur_busy" src="https://wearejh.com/wp-content/uploads/2023/03/image.gif" style="width:32px; position:absolute; right:1%">
+
+</fieldset>
+</marquee>
+
+      
+    
+</td></tr>
+    
+    
+            
+<tr style="height:100%"><td>
+
+    <iframe src="/Home/Mainmenu" id="UIDisplay" style="width:100%; height:100%; border:transparent; border-radius:0px 6px 6px 0px"></iframe>
+
+
+</td></tr>
+
+
+
+
+<tr style="height:0%"><td>
+
+<marquee direction="up" behavior="slide" scrollamount="20">
+<center><div style="color:white; background:linear-gradient(90deg, #FFF, #000, #000, #FFF)">© 2026 BizzCork Ltd.</div>
+</center>
+</marquee>
+
+
+<div style="display:inline-block; border:3.5px solid white; border-radius:2px; margin-top:-4px; background:white"><text id="clock_container">88:88:88<br>88.88.8888</text></div>
+
+</td></tr>
+
+      
+</tbody>
+</table>
+
+
+
+
+
+
+
+<script>
+function clockupdate() {
+        var datetime = new Date();
+        var minsnow= datetime.getMinutes(); if(minsnow<10){minsnow="0"+minsnow}
+        var secsnow= datetime.getSeconds(); if(secsnow<10){secsnow="0"+secsnow}
+        document.getElementById("clock_container").innerText= datetime.getHours()+":"+minsnow+":"+secsnow+"\n"+datetime.getDate()+"."+(datetime.getMonth()+1)+"."+datetime.getFullYear();
+        document.getElementById("clock_container").parentElement.style.background="linear-gradient("+(datetime.getSeconds()*6+180)+"deg, #888, #BBB, #FFF, #FFF, #FFF, #DDD)";
+    }
+	clockupdate;
+	setInterval(clockupdate, 1000);
+</script>
+
+
+
+
+<script>
+document.getElementById("logout_button").addEventListener("click", function(){
+document.cookie = "uname_login=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/"; window.location=window.location;
+})
+</script>
+
+
+<script>
+    var cur_busy= document.getElementById("cur_busy");
+    function busy(){cur_busy.style.visibility="visible"}
+
+    var contentIframe= document.getElementById("UIDisplay");
+
+
+    contentIframe.onload= function(){ cur_busy.style.visibility="hidden";
+    contentIframe.contentWindow.window.addEventListener("message", function(event){
+    if(event.data=="busy"){busy();}
+
+    if(event.data=="goto mainmenu"){busy(); contentIframe.src="/Home/Mainmenu";}
+    if(event.data=="goto mainmenu from settings"){busy();
+
+    var cookie="bgurl_og";
+    var cookie_get=document.cookie.slice(document.cookie.indexOf(cookie+"="), document.cookie.indexOf(";", document.cookie.indexOf(cookie+"=")));
+    var cookie_string=cookie_get.slice(cookie_get.indexOf("=")+1);
+
+    document.body.style.backgroundImage=cookie_string; contentIframe.src="/Home/Mainmenu";}
+
+    if(event.data=="goto sales"){busy(); contentIframe.src="/Home/Sales";}
+    if(event.data=="goto employees"){busy(); contentIframe.src="/Home/Employees";}
+
+    if(event.data=="goto settings"){busy();
+    document.cookie= "bgurl_og="+document.body.style.backgroundImage+"; path=/";
+    contentIframe.src="/Home/Settings";}
+    
+    if(event.data=="save background"){document.cookie="bgurl_og="+document.body.style.backgroundImage+"; path=/";
+    
+    document.getElementById("display_name").innerText=contentIframe.contentDocument.getElementById("Dname").value;
+
+    }
+    
+    if(event.data=="goto inventory"){busy(); contentIframe.src="/Home/Inventory";}
+
+
+	if(event.data=="bg01" || event.data=="bg02" || event.data=="bg03" || event.data=="bg04" || event.data=="bg05" || event.data=="bg06"){
+    contentIframe.contentDocument.getElementById("Bgurl").value=contentIframe.contentDocument.getElementById(event.data).src;
+    document.body.style.backgroundImage="url('"+contentIframe.contentDocument.getElementById(event.data).src+"')";}
+
+    if(event.data=="bgcustom"){
+    contentIframe.contentDocument.getElementById("Bgurl").value=contentIframe.contentDocument.getElementById("bgcustom").value;
+    document.body.style.backgroundImage="url('"+contentIframe.contentDocument.getElementById("bgcustom").value+"')";}
+    
+    if(event.data=="refresh"){busy(); window.location=window.location;}
+
+    })
+    }
+</script>
+
+
+</body>
+}
+
+
+
+
+
+
+
+
+
+
+
+
+catch{ // REDIRECT TO LOGIN/REGISTER PAGE IF READ UNSUCCESSFUL
+<head>
+    <title>BizzCork - Your virtual Business Corkboard</title>
+</head>
+
+<body style="background-image: url('https://mir-s3-cdn-cf.behance.net/project_modules/source/ba056770455143.5ba3cb5ce2161.gif'); overflow:hidden" class="nofullscreen">
+
+@{ //var cookieoptions= new CookieOptions{Path="/"};
+
+var cfg= WebApplication.CreateBuilder().Configuration;
+string? connStr= cfg.GetValue<string>("ConnectionString");
+
+string? cmd= HttpContextAccessor?.HttpContext?.Request.Cookies["cmd"];
+HttpContextAccessor?.HttpContext?.Response.Cookies.Append("cmd","",cookieoptions);
+string? uname= HttpContextAccessor?.HttpContext?.Request.Cookies["uname"];
+string? pword= HttpContextAccessor?.HttpContext?.Request.Cookies["pword"];
+
+string? uname_cmp="";
+string? pword_cmp="";
+
+if(cmd=="login"){
+
+HttpContextAccessor?.HttpContext?.Response.Cookies.Append("cmd","",cookieoptions);
+
+
+//!BUG: fix validation for non-existent names
+
+SqlConnection conn= new SqlConnection(connStr);
+string sql= "select uname,pword from dbo.[users/"+uname+"] where uname='"+uname+"'";
+
+conn.Open();
+SqlCommand command= new SqlCommand(sql,conn);
+SqlDataReader rdr= command.ExecuteReader();
+
+while(rdr.Read()){
+uname_cmp= (string)rdr[0];
+pword_cmp= (string)rdr[1];
+} rdr.Close();
+conn.Close();
+
+if(uname==uname_cmp && pword==pword_cmp){
+HttpContextAccessor?.HttpContext?.Response.Cookies.Append("uname_login",uname_cmp,cookieoptions);
+<script>window.location=window.location</script>
+}else{<script>alert("Incorrect username or password.")</script>}
+
+}
+
+
+
+if(cmd=="register"){
+
+HttpContextAccessor?.HttpContext?.Response.Cookies.Append("cmd","",cookieoptions);
+
+uname= HttpContextAccessor?.HttpContext?.Request.Cookies["uname"];
+
+
+
+//try{
+
+SqlConnection conn= new SqlConnection(connStr);
+
+    string sql=
+    "CREATE TABLE [dbo].[users/"+uname+"]("+
+	"[uname] [nvarchar](50) NULL,"+
+	"[dname] [nvarchar](max) NULL,"+
+	"[pword] [nvarchar](max) NULL,"+
+	"[email] [nvarchar](max) NULL,"+
+	"[phnum] [nvarchar](max) NULL,"+
+	"[location] [nvarchar](max) NULL,"+
+	"[contact] [nvarchar](max) NULL,"+
+	"[details] [nvarchar](max) NULL,"+
+	"[signupdate] [datetime] NULL,"+
+	"[set_bgurl] [nvarchar](max) NULL,"+
+	"[set_bgfile] [varchar](max) NULL,"+
+	"[set_bgtype] [bit] NULL,"+
+	"[cork_notetitle] [nvarchar](100) NULL,"+
+	"[cork_notecontents] [nvarchar](1000) NULL,"+
+	"[cork_notefiles] [nvarchar](max) NULL,"+
+	"[cork_noteid] [nvarchar](max) NULL,"+
+	"[cork_noteposX] [real] NULL,"+
+	"[cork_noteposY] [real] NULL,"+
+	"[cork_notesize] [varchar](max) NULL,"+
+	"[cork_notecolor] [varchar](8) NULL,"+
+	"[cork_noterotation] [smallint] NULL,"+
+	"[cork_notelocation] [varchar](8) NULL,"+
+	"[cork_notelastedit] [datetime] NULL,"+
+	"[cork_notecreated] [datetime] NULL,"+
+	"[cork_noteisexternal] [bit] NULL,"+
+	"[cork_noteisimportant] [bit] NULL,"+
+	"[timeline_joincode] [nvarchar](max) NULL,"+
+	"[timeline_scroll] [real] NULL,"+
+	"[timeline_maxitemsperpage] [tinyint] NULL"+
+
+"); CREATE TABLE [dbo].[timelines/"+uname+"]("+
+	"[messagesender] [nvarchar](max) NULL,"+
+	"[messagedate] [datetime] NULL,"+
+	"[messagetitle] [nvarchar](100) NULL,"+
+	"[messagecontents] [nvarchar](1000) NULL,"+
+	"[messagefiles] [nvarchar](max) NULL,"+
+	"[messageid] [nvarchar](max) NULL,"+
+	"[messagecategory] [nvarchar](50) NULL,"+
+	"[messagereplyto] [nvarchar](max) NULL,"+
+	"[messagenumber] [bigint] NULL"+
+");";
+
+conn.Open();
+SqlCommand command= new SqlCommand(sql,conn);
+SqlDataReader rdr= command.ExecuteReader();
+
+while(rdr.Read()){} rdr.Close(); conn.Close();
+
+
+
+
+
+conn= new SqlConnection(connStr);
+
+    sql= "INSERT INTO dbo.[users/"+uname+"]"+ " (uname,dname,pword,email,phnum,location,contact,details,signupdate,set_bgurl,set_bgfile,set_bgtype,cork_notetitle,cork_notecontents,cork_notefiles,cork_noteid,cork_noteposX,cork_noteposY,cork_notesize,cork_notecolor,cork_noterotation,cork_notelocation,cork_notelastedit,cork_notecreated,cork_noteisexternal,cork_noteisimportant,timeline_joincode,timeline_scroll,timeline_maxitemsperpage) values(N'"+
+    uname+"',N'"+(string?)HttpContextAccessor?.HttpContext?.Request.Cookies["dname"]+"',N'"+pword+"',N'"+(string?)HttpContextAccessor?.HttpContext?.Request.Cookies["email"]+"','"+(string?)HttpContextAccessor?.HttpContext?.Request.Cookies["phnumber"]+"',N'"+(string?)HttpContextAccessor?.HttpContext?.Request.Cookies["location"]+"',N'"+(string?)HttpContextAccessor?.HttpContext?.Request.Cookies["contact"]+"',N'"+HttpContextAccessor?.HttpContext?.Request.Cookies["details"]+"',N'"+DateTime.Now.ToString("yyyy-MM-dd")+"',N'https://mir-s3-cdn-cf.behance.net/project_modules/source/ba056770455143.5ba3cb5ce2161.gif',NULL,0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0,25);";
+
+conn.Open();
+command= new SqlCommand(sql,conn);
+rdr= command.ExecuteReader();
+
+while(rdr.Read()){} rdr.Close(); conn.Close();
+
+HttpContextAccessor?.HttpContext?.Response.Cookies.Append("uname_login",uname,cookieoptions);
+
+<script>window.location=window.location</script>
+
+//}catch{<script>alert("This username exists!"); window.location=window.location</script>}
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+}
+
+
+
+
+}
+
+<style>
+.credential_switch {
+border:4px solid white; border-radius:4px; background:linear-gradient(180deg,#FFF,#CCC); cursor:pointer; display:inline-block}
+</style>
+
+<div class="center-v" style="width:100%; left:0px; background:#0000003F">
+
+<style>.displayname {background:white; border:2px solid white; border-radius:500px;}</style>
+
+<marquee direction="up" behavior="slide" scrollamount="20">
+<fieldset>
+
+<table style="width:100%; table-layout:fixed">
+<tbody>
+<tr>
+
+
+<td>
+<div style="display:inline-block; border:3.5px solid white; border-radius:2px; margin-top:-4px; background:white"><text id="clock_container">88:88:88<br>88.88.8888</text></div>
+</td>
+
+<td>
+<center><text style="color:white">BizzCork</text></center>
+</td>
+
+<td style="text-align:right">
+<text class="credential_switch" id="switch_forms_button"><u>Register an account ▶</u></text>
+
+</td>
+</tr>
+</tbody>
+</table>
+
+</fieldset>
+</marquee>
+
+
+
+
+
+<iframe src="/Home/Login" id="UIDisplay" style="width:100%; height:80vh; border:transparent"></iframe>
+	
+
+<marquee direction="up" behavior="slide" scrollamount="20">
+<center><div style="color:white; background:linear-gradient(90deg, #FFF, #000, #000, #FFF)">© 2025 WonderWave Industries Incorporated<br>This web app uses cookies. You accept cookies by continuing to use it.</div>
+</center>
+</marquee>
+
+<script>
+function clockupdate() {
+        var datetime = new Date();
+        var minsnow= datetime.getMinutes(); if(minsnow<10){minsnow="0"+minsnow}
+        var secsnow= datetime.getSeconds(); if(secsnow<10){secsnow="0"+secsnow}
+        document.getElementById("clock_container").innerText= datetime.getHours()+":"+minsnow+":"+secsnow+"\n"+datetime.getDate()+"."+(datetime.getMonth()+1)+"."+datetime.getFullYear();
+        document.getElementById("clock_container").parentElement.style.background="linear-gradient("+(datetime.getSeconds()*6+180)+"deg, #888, #BBB, #FFF, #FFF, #FFF, #DDD)";
+    }
+	clockupdate;
+	setInterval(clockupdate, 1000);
+
+
+
+
+
+
+document.getElementById("switch_forms_button").addEventListener("click", function(){
+if(document.getElementById("switch_forms_button").innerText=="Register an account ▶"){
+
+document.getElementById("switch_forms_button").innerHTML="<u>Log in, instead ▶</u>";
+document.getElementById("UIDisplay").src="/Home/Register";
+}else{
+document.getElementById("switch_forms_button").innerHTML="<u>Register an account ▶</u>";
+document.getElementById("UIDisplay").src="/Home/Login";
+}
+})
+
+
+var contentIframe= document.getElementById("UIDisplay");
+contentIframe.onload= function(){
+
+contentIframe.contentWindow.window.addEventListener("message", function(event){
+if(event.data=="refresh"){window.location=window.location;}
+})
+
+
+}
+
+</script>
+
+</div>
+
+
+</body>
+
+}
+}
